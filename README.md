@@ -1,6 +1,6 @@
 # Automated-Testing-Nevula
 
-Testing Netbox's WebApp with Selenium WebDriver using JavaScript (Node.js)
+Testing Netboxs WebApp with Selenium WebDriver using JavaScript (Node.js)
 
 Requirements:
 - Node.js v8+
