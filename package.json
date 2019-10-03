@@ -1,0 +1,17 @@
+{
+  "name": "selenium_example",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha --recursive --timeout 100000 test/**/*.js"
+  },
+  "author": "Genova",
+  "license": "ISC",
+  "dependencies": {
+    "chromedriver": "^77.0.0",
+    "geckodriver": "^1.18.0",
+    "mocha": "^6.2.0",
+    "selenium-webdriver": "^4.0.0-alpha.5"
+  }
+}
