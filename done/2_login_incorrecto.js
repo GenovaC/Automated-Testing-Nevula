@@ -30,7 +30,7 @@ describe('Verify login with incorrect credentials', function () {
 
     it('Login without password', async function() {
         await usernameTextField.clear();
-        await usernameTextField.sendKeys(realUser, Key.RETURN);  
+        await usernameTextField.sendKeys(fakeUser, Key.RETURN);  
 
         await loginButton.click();
         
