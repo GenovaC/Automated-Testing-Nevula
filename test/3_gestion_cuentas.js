@@ -6,13 +6,14 @@ const {Builder, Key, By, until} = require('selenium-webdriver');
 
 describe('Verify Clients DataTable', function () {
     const WAIT_TIME = 3000;
+    const WAIT_LONG_TIME = 10000;
     let driver;
-    let realUser = "gcastillo";
+    let realUser = "QaTest";
     let realPassword = "Abc.123";
     let statusClient = ["Habilitado", "Deshabilitado"];    
     let typeClient = ["Particular", "Comercial", "Corporativo"];
     let emailRegex = /^([A-Za-z0-9ñÑ\-\_]+(?:\.[A-Za-z0-9ñÑ\-\_]+)*)@((?:[A-Za-z0-9ñÑ\-\_]+\.)*\w[A-Za-z0-9ñÑ\-\_]{0,66})\.([A-Za-z0-9ñÑ\-\_]{2,6}(?:\.[a-z]{2})?)$/i;
-    let nameRegex = /^[a-záéíóúüñA-ZÁÉÍÓÚÜÑ0-9!@#$&()-`.+,/\"\s]+$/;
+    let nameRegex = /^[a-záéíóúüñA-ZÁÉÍÓÚÜÑ0-9!@#$&()-`.+',/\"\s]+$/;
 
     before(async function() {
         driver = await new Builder().forBrowser('chrome').build();
@@ -45,81 +46,88 @@ describe('Verify Clients DataTable', function () {
         await clientsLengthSelect.click();  
         await driver.sleep(WAIT_TIME);
 
-        //Seleccionar la opción del select para ver 10, 25, 50 (actual) o 100 registros en el DataTable
-        await clientsLengthSelect.findElement({css: '#dataTableClients_length > label > select > option:nth-child(3)'}).click();
+        //Seleccionar la opción del select para ver 10, 25, 50 (actual) o 100 registros en el DataTable. 
+        await clientsLengthSelect.findElement({css: '#dataTableClients_length > label > select > option:nth-child(4)'}).click();
+        console.log("Paginación cada 100 registros en la tabla");
         await driver.sleep(WAIT_TIME);
+        
     });
+
 
     it('Validate Client Data Table', async function() {
         let clientDateTable = await driver.findElement(By.xpath('//*[@id="dataTableClients"]/tbody'));     	
-    	let rows_table = await clientDateTable.findElements(By.tagName("tr")); //Obtener las filas de la tabla    	
-        let rows_count = rows_table.length; //Calcular el número de filas de la tabla
-        
-    	//recorriendo todos los valores visibles en la tabla
-    	for (var i = 0; i < rows_count; i++) {
-            let  columns_row = await rows_table[i].findElements(By.tagName("td")); //Obtener las columnas de una fila específica 
-    	
-    	    //Calcular número de columnas/celdas. 
-            let columns_count = columns_row.length;    
+        let nextButton; 
+        let continuePaginateFlag;
+    	let rows_table;   	
+        let rows_count;
+        let pageNum = 1;
+        let columns_row
+        let columns_count
+        let columnValue = "";
+
+        do {
             
-    	    //Recorrer las columnas de una fila específica 
-    	    for (var column = 0; column < columns_count; column++) {
-                switch (column) {
-                    //Ejecución para el caso del Nombre del cliente
-                    case 0: 
-                        columns_row[column].getText().then(function (value) {            
-                            try { 
-                                if (!nameRegex.test(value))
-                                    console.log("NOMBRE del cliente en la FILA " + i + " no cumple los estándares: " +value);   
-                            } catch (err) {
-                                console.log('Error en el NOMBRE del cliente de la fila '+i+' paginando cada 10 registros: '+err);  
-                            }
-                        });
-                        break;
+            console.log("-- Página: "+pageNum+" de la tabla.");
+            continuePaginateFlag = false;
 
-                    //Ejecución para el caso del Email del Cliente
-                    case 1:
-                        columns_row[column].getText().then(function (value) {                                 
-                            try { 
-                                if (!emailRegex.test(value))
-                                    console.log("EMAIL del cliente en la FILA " + i + " no cumple los estándares: " +value);      
-                                
-                            } catch (err) {
-                                console.log('Error en el EMAIL del cliente de la fila '+i+' paginando cada 10 registros: '+err);  
-                            }
-                        });
-                        break;
+            rows_table = await clientDateTable.findElements(By.tagName("tr")); //Obtener las filas de la tabla    	
+            rows_count = rows_table.length; //Calcular el número de filas de la tabla
+            
+            //recorriendo todos los valores visibles en la tabla
+            for (var i = 0; i < rows_count; i++) {
+                columns_row = await rows_table[i].findElements(By.tagName("td")); //Obtener las columnas de una fila específica 
+            
+                //Calcular número de columnas/celdas. 
+                columns_count = columns_row.length;    
+                
+                //Recorrer las columnas de una fila específica 
+                for (var column = 0; column < columns_count; column++) {
+                    columnValue = await columns_row[column].getText().then(function (value) { return value; });
 
-                    //Ejecución para el caso del Tipo del Cliente
-                    case 2:
-                        columns_row[column].getText().then(function (value) {            
-                            try { 
-                                if (!_.includes(typeClient, value)){
-                                    console.log("TIPO del cliente en la FILA " + i + " no cumple los estándares:  "+value); 
-                                }
-                            } catch (err) {
-                                console.log('Error en el TIPO del cliente de la fila '+i+' paginando cada 10 registros: '+err);  
-                            }
-                        });
-                        break;
+                    switch(column) {
+                        case 0:
+                            if (!nameRegex.test(columnValue) || _.isNull(columnValue))
+                                console.log("NOMBRE del cliente en la FILA " + i + " PÁGINA "+pageNum+" no cumple los estándares: " +columnValue);
+                            break;
 
-                    //Ejecución para el caso del Estatus del Cliente
-                    case 3:
-                        columns_row[column].getText().then(function (value) {            
-                            try {   
-                                if (!_.includes(statusClient, value)){
-                                    console.log("ESTADO del cliente en la FILA " + i + " no cumple los estándares: " +value); 
-                                }
-                            } catch (err) {
-                                console.log('Error en el ESTADO del cliente de la fila '+i+' paginando cada 10 registros: '+err);    
-                            }
-                        });
-                        break;
-                } //switch end
+                        case 1:
+                            if (!emailRegex.test(columnValue) || _.isNull(columnValue))
+                                console.log("EMAIL del cliente en la FILA " + i + " PÁGINA "+pageNum+" no cumple los estándares: " +columnValue);
+                            break;
 
-    	    }// end for
-    	    
-        } //end for
+                        case 2:
+                            if (!_.includes(typeClient, columnValue) || _.isNull(columnValue))
+                                console.log("TIPO del cliente en la FILA " + i + " PÁGINA "+pageNum+" no cumple los estándares:  "+columnValue);
+                            break;
+
+                        case 3:
+                            if (!_.includes(statusClient, columnValue) || _.isNull(columnValue))
+                                console.log("ESTADO del cliente en la FILA " + i + " PÁGINA "+pageNum+" no cumple los estándares: " +columnValue); 
+                            break;
+
+                    }// end switch
+                }// end for                
+            } //end for                    
+            
+            nextButton = await driver.findElement({css: '#dataTableClients_next'});   
+
+            //Obtener el valor de la clase del botón siguiente para saber si está deshabilitado (es decir, si hay más registros)
+            nextButtonValue = await driver.findElement({css: '#dataTableClients_paginate > ul > li:nth-child(2)'}).getAttribute('class')
+                            .then(function (value) {   
+                                    return value;           
+                            });
+
+            //si el botón de siguiente NO está deshabilitado
+            if (!_.isEqual(nextButtonValue, "disabled"))  {
+                continuePaginateFlag = true;
+                
+                await nextButton.click();        
+                await driver.sleep(WAIT_LONG_TIME);
+                pageNum++;
+            }
+
+        }  while (continuePaginateFlag);
+        console.log("Completada revisión del DataTable de Clientes");
     });
 
 })
